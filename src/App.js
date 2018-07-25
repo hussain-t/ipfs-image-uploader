@@ -13,9 +13,14 @@ class App extends Component {
     super(props)
 
     this.state = {
+      ipfsHash: '',
       storageValue: 0,
-      web3: null
+      web3: null,
+      buffer: null
     }
+
+    this.captureFile = this.captureFile.bind(this);
+    this.onSubmit = this.onSubmit.bind(this);
   }
 
   componentWillMount() {
@@ -52,19 +57,42 @@ class App extends Component {
     var simpleStorageInstance
 
     // Get accounts.
-    this.state.web3.eth.getAccounts((error, accounts) => {
-      simpleStorage.deployed().then((instance) => {
-        simpleStorageInstance = instance
+    // this.state.web3.eth.getAccounts((error, accounts) => {
+    //   simpleStorage.deployed().then((instance) => {
+    //     simpleStorageInstance = instance
 
-        // Stores a given value, 5 by default.
-        return simpleStorageInstance.set(5, {from: accounts[0]})
-      }).then((result) => {
-        // Get the value from the contract to prove it worked.
-        return simpleStorageInstance.get.call(accounts[0])
-      }).then((result) => {
-        // Update state with the result.
-        return this.setState({ storageValue: result.c[0] })
-      })
+    //     // Stores a given value, 5 by default.
+    //     return simpleStorageInstance.set(5, {from: accounts[0]})
+    //   }).then((result) => {
+    //     // Get the value from the contract to prove it worked.
+    //     return simpleStorageInstance.get.call(accounts[0])
+    //   }).then((result) => {
+    //     // Update state with the result.
+    //     return this.setState({ storageValue: result.c[0] })
+    //   })
+    // })
+  }
+
+  captureFile(event) {
+    event.preventDefault();
+    const file = event.target.files[0];
+    const reader = new window.FileReader();
+    reader.readAsArrayBuffer(file);
+    reader.onloadend = () => {
+      this.setState({ buffer: Buffer(reader.result) });
+      console.log(this.state.buffer);
+    };
+  }
+
+  onSubmit(event) {
+    event.preventDefault();
+    ipfs.files.add(this.state.buffer, (error, result) => {
+      if (error) {
+        console.error(error);
+        return;
+      }
+      this.setState({ ipfsHash: result[0].hash });
+      console.log('ipfsHash', this.state.ipfsHash);
     })
   }
 
@@ -72,18 +100,20 @@ class App extends Component {
     return (
       <div className="App">
         <nav className="navbar pure-menu pure-menu-horizontal">
-            <a href="#" className="pure-menu-heading pure-menu-link">Truffle Box</a>
+            <a href="#" className="pure-menu-heading pure-menu-link">IPFS File upoload Dapp </a>
         </nav>
 
         <main className="container">
           <div className="pure-g">
             <div className="pure-u-1-1">
-              <h1>Good to Go!</h1>
-              <p>Your Truffle Box is installed and ready.</p>
-              <h2>Smart Contract Example</h2>
-              <p>If your contracts compiled and migrated successfully, below will show a stored value of 5 (by default).</p>
-              <p>Try changing the value stored on <strong>line 59</strong> of App.js.</p>
-              <p>The stored value is: {this.state.storageValue}</p>
+              <h1>Your Image</h1>
+              <p>Your image is stored on IPFS & The Ethereum Blockchain</p>
+              <img src="" alt="" />
+              <h2>Upload image</h2>
+              <form onSubmit={this.onSubmit}>
+                <input type="file" onChange={this.captureFile} />
+                <input type="submit" />
+              </form>
             </div>
           </div>
         </main>
